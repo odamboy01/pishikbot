@@ -1,19 +1,34 @@
 import asyncio
-from aiogram import Bot, Dispatcher, F
-from aiogram.filters import CommandStart
-from aiogram.types import Message, CallbackQuery
-from aiogram.types import Message
+from aiogram import Bot, Dispatcher, F, Router, types
+from aiogram.filters import CommandStart, Command
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardMarkup, KeyboardButton, FSInputFile
+from aiogram.fsm.state import StatesGroup, State
+from aiogram.fsm.context import FSMContext
+from aiogram.exceptions import TelegramForbiddenError
 
 from paws import *
 from config import TOKEN
+from logger import log_action, log_system
+import traceback
+from aiogram.client.session.aiohttp import AiohttpSession
 
-bot = Bot(token=TOKEN)
+
+session = AiohttpSession()
+bot = Bot(token=TOKEN, session=session)
 dp = Dispatcher()
 
 # Start
 @dp.message(CommandStart())
 async def cmd_start(message: Message):
-    await message.answer("Nagaaaaaap", reply_markup=menu)
+
+    await message.answer_animation(animation="https://media1.tenor.com/m/gXWy8s7uqzsAAAAd/cat-eating-wallpaper-cat.gif")
+    log_action(message.from_user, ' Start Komandasi bosildi')
+    user = message.from_user
+    await message.answer(
+        f"Nagap, {user.full_name}!", 
+        reply_markup=menu
+    )
+
 
 @dp.message(F.animation)
 async def gif_id(message: Message):
@@ -23,16 +38,19 @@ async def gif_id(message: Message):
 # langs
 @dp.callback_query(F.data == 'lang')
 async def langs(callback: CallbackQuery):
+    log_action(callback.from_user, "Yo'nalish tanlamoqda")
     await callback.message.edit_text("Yo'nalish tanlang: ", reply_markup=inline_langs)
 
 # OS
-@dp.callback_query(F.data == 'lang')
+@dp.callback_query(F.data == 'os')
 async def os(callback: CallbackQuery):
+    log_action(callback.from_user, "Operatsion tizimlar knopkasi bosildi")
     await callback.message.edit_text("💻 Operatsion tizimlar uchun:", reply_markup=os_buttons)
 
 # C
 @dp.callback_query(F.data == 'c')
 async def c(callback: CallbackQuery):
+    log_action(callback.from_user, "OS → C tilini tanladi")
     await callback.message.edit_text(
         "C dasturlash tili 1972-yilda Dennis Ritchie tomonidan yaratilgan. "
         "U operatsion tizimlar, kompilyatorlar va mikrokontrollerlarda keng qo‘llaniladi.\n"
@@ -45,17 +63,15 @@ async def c(callback: CallbackQuery):
 # C++
 @dp.callback_query(F.data == 'cpp')
 async def cpp(callback: CallbackQuery):
-    await callback.message.edit_text(
-        "C++ dasturlash tili 1983-yilda Bjarne Stroustrup tomonidan C tiliga asoslanib yaratilgan. "
-        "U tezkor va samarali bo‘lib, tizim dasturlash, o‘yinlar, dasturiy ta’minot va grafikada keng qo‘llaniladi.\n"
-        "C++ obyektga yo‘naltirilgan dasturlashni qo‘llab-quvvatlaydi, shu sababli katta loyihalarda juda qulay. "
-        "Afzalliklari — tezlik va kuchli imkoniyatlar, kamchiligi esa murakkab sintaksis va yuqori o‘rganish chizig‘idir.",
-        reply_markup=os_back
-    )
+    image = FSInputFile("images/cpp.webp")
+    await callback.message.answer_photo(photo=image, caption="C++ dasturlash tili 1983-yilda Bjarne Stroustrup tomonidan C tiliga asoslanib yaratilgan. ")
+    log_action(callback.from_user, "OS → C++ tilini tanladi")
+    
 
 # Rust
 @dp.callback_query(F.data == 'rust')
 async def rust(callback: CallbackQuery):
+    log_action(callback.from_user, "OS → Rust tilini tanladi")
     await callback.message.edit_text(
         "Rust 2010-yilda Mozilla kompaniyasi tomonidan yaratilgan. "
         "U xavfsizlik, tezlik va parallel ishlashga katta e’tibor qaratadi.\n"
@@ -68,6 +84,7 @@ async def rust(callback: CallbackQuery):
 # Go
 @dp.callback_query(F.data == 'go')
 async def go(callback: CallbackQuery):
+    log_action(callback.from_user, "OS → Go tilini tanladi")
     await callback.message.edit_text(
         "Go dasturlash tili 2009-yilda Google tomonidan ishlab chiqilgan. "
         "U soddalik, tezlik va samaradorlikni birlashtiradi.\n"
@@ -80,6 +97,7 @@ async def go(callback: CallbackQuery):
 # Assembly
 @dp.callback_query(F.data == 'assembly')
 async def assembly(callback: CallbackQuery):
+    log_action(callback.from_user, "OS → Assembly tilini tanladi")   
     await callback.message.edit_text(
         "Assembly dasturlash tili eng past darajadagi tillardan biri bo‘lib, "
         "kompyuter protsessori tushunadigan mashina kodiga juda yaqin.\n"
@@ -92,6 +110,7 @@ async def assembly(callback: CallbackQuery):
 # Swift
 @dp.callback_query(F.data == 'swift')
 async def swift(callback: CallbackQuery):
+    log_action(callback.from_user, "OS → Swift tilini tanladi")
     await callback.message.edit_text(
         "Swift dasturlash tili 2014-yilda Apple tomonidan yaratilgan bo‘lib, "
         "asosan iOS, macOS va boshqa Apple platformalari uchun mo‘ljallangan. "
@@ -105,14 +124,12 @@ async def swift(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'web')
 async def web(callback: CallbackQuery):
+    log_action(callback.from_user, "Web dasturlash bo‘limini ochdi")
     await callback.message.edit_text("🌐 Websaytlar uchun:", reply_markup=web_buttons)
-
-# 🌐 Web tillari
-
-# 🌐 Web tillari
 
 @dp.callback_query(F.data == 'web_py')
 async def web_py(callback: CallbackQuery):
+    log_action(callback.from_user, "Web → Python tanladi")
     await callback.message.edit_text(
         "Python dasturlash tili 1991-yilda Guido van Rossum tomonidan yaratilgan. "
         "U soddaligi, o‘qilishi va keng kutubxonalar to‘plami bilan mashhur. "
@@ -123,6 +140,7 @@ async def web_py(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'web_js')
 async def web_js(callback: CallbackQuery):
+    log_action(callback.from_user, "Web → JavaScript tanladi")
     await callback.message.edit_text(
         "JavaScript dasturlash tili 1995-yilda Brendan Eich tomonidan yaratilgan. "
         "U asosan veb-sahifalarga interaktivlik qo‘shish uchun ishlatiladi. "
@@ -133,6 +151,7 @@ async def web_js(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'web_ts')
 async def web_ts(callback: CallbackQuery):
+    log_action(callback.from_user, "Web → TypeScript tanladi")
     await callback.message.edit_text(
         "TypeScript dasturlash tili 2012-yilda Microsoft tomonidan ishlab chiqilgan. "
         "U JavaScript’ning kuchaytirilgan versiyasi bo‘lib, unga statik tiplash imkoniyatini qo‘shadi. "
@@ -143,6 +162,7 @@ async def web_ts(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'web_php')
 async def web_php(callback: CallbackQuery):
+    log_action(callback.from_user, "Web → PHP tanladi")
     await callback.message.edit_text(
         "PHP dasturlash tili 1995-yilda Rasmus Lerdorf tomonidan yaratilgan. "
         "U asosan dinamik veb-saytlar va server tomonida ishlaydigan dasturlar yaratishda qo‘llaniladi. "
@@ -153,6 +173,7 @@ async def web_php(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'web_ruby')
 async def web_ruby(callback: CallbackQuery):
+    log_action(callback.from_user, "Web → Ruby tanladi")
     await callback.message.edit_text(
         "Ruby dasturlash tili 1995-yilda Yukihiro Matsumoto tomonidan yaratilgan. "
         "U soddaligi va o‘qilishi qulay sintaksisi bilan mashhur. "
@@ -163,6 +184,7 @@ async def web_ruby(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'web_java')
 async def web_java(callback: CallbackQuery):
+    log_action(callback.from_user, "Web → Java tanladi")
     await callback.message.edit_text(
         "Java dasturlash tili 1995-yilda Sun Microsystems tomonidan yaratilgan. "
         "U ko‘p platformali va keng qo‘llaniladigan til bo‘lib, veb ilovalar, Android dasturlari va katta tizimlarda ishlatiladi. "
@@ -172,6 +194,7 @@ async def web_java(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'web_cs')
 async def web_cs(callback: CallbackQuery):
+    log_action(callback.from_user, "Web → C# tanladi")
     await callback.message.edit_text(
         "C# dasturlash tili Microsoft tomonidan yaratilgan bo‘lib, asosan .NET platformasida qo‘llaniladi. "
         "U veb ilovalar, o‘yinlar (Unity orqali) va korporativ dasturlar yaratishda keng ishlatiladi. "
@@ -181,6 +204,7 @@ async def web_cs(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'web_kot')
 async def web_kot(callback: CallbackQuery):
+    log_action(callback.from_user, "Web → Kotlin tanladi")
     await callback.message.edit_text(
         "Kotlin dasturlash tili 2011-yilda JetBrains tomonidan ishlab chiqilgan. "
         "U Java bilan to‘liq mos keladi va Android dasturlashda keng qo‘llaniladi. "
@@ -195,12 +219,14 @@ async def web_kot(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'security')
 async def security(callback: CallbackQuery):
+    log_action(callback.from_user, "Xavfsizlik bo‘limini ochdi")
     await callback.message.edit_text("🔒 Xavfsizlik uchun:", reply_markup=security_buttons)
 
 
 
 @dp.callback_query(F.data == 'py')
 async def sec_python(callback: CallbackQuery):
+    log_action(callback.from_user, "Security → Python tanladi")
     await callback.message.edit_text(
         "Python xavfsizlik sohasida juda mashhur til. "
         "U penetration testing, exploit yozish va avtomatlashtirishda keng qo‘llaniladi. "
@@ -211,6 +237,7 @@ async def sec_python(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'c')
 async def sec_c(callback: CallbackQuery):
+    log_action(callback.from_user, "Security → C tanladi")
     await callback.message.edit_text(
         "C tili xavfsizlikda juda muhim, chunki u operatsion tizimlar va past darajadagi dasturlarni yaratishda ishlatiladi. "
         "Ko‘plab ekspluatatsiyalar va xakerlik vositalari C tilida yozilgan. "
@@ -220,6 +247,7 @@ async def sec_c(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'cpp')
 async def sec_cpp(callback: CallbackQuery):
+    log_action(callback.from_user, "Security → C++ tanladi")
     await callback.message.edit_text(
         "C++ xavfsizlikda kuchli vosita hisoblanadi. "
         "U katta hajmdagi dasturlar va ekspluatatsiyalar yozishda qo‘llaniladi. "
@@ -229,6 +257,7 @@ async def sec_cpp(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'go')
 async def sec_go(callback: CallbackQuery):
+    log_action(callback.from_user, "Security → Go tanladi")
     await callback.message.edit_text(
         "Go (Golang) xavfsizlik va tarmoqlar sohasida tez sur’atlarda rivojlanmoqda. "
         "Uning parallel ishlash imkoniyatlari skanerlash, server va tarmoqli dasturlar uchun qulay. "
@@ -238,6 +267,7 @@ async def sec_go(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'rust')
 async def sec_rust(callback: CallbackQuery):
+    log_action(callback.from_user, "Security → Rust tanladi")
     await callback.message.edit_text(
         "Rust xavfsizlikda xotira xatolaridan xoli bo‘lishi bilan mashhur. "
         "U xavfsiz tizimlar, kriptografiya va ishonchli dasturlar yaratishda qo‘llaniladi. "
@@ -247,6 +277,7 @@ async def sec_rust(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'perl')
 async def sec_perl(callback: CallbackQuery):
+    log_action(callback.from_user, "Security → Perl tanladi")
     await callback.message.edit_text(
         "Perl dasturlash tili xavfsizlik va tizim boshqaruvida ishlatiladi. "
         "Ko‘plab eski xavfsizlik skriptlari va ekspluatatsiyalar Perl’da yozilgan. "
@@ -256,6 +287,7 @@ async def sec_perl(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'ruby')
 async def sec_ruby(callback: CallbackQuery):
+    log_action(callback.from_user, "Security → Ruby tanladi")
     await callback.message.edit_text(
         "Ruby xavfsizlikda asosan Metasploit Framework orqali mashhur. "
         "Metasploit — eng mashhur ekspluatatsiya vositalaridan biri bo‘lib, Ruby’da yozilgan. "
@@ -265,6 +297,7 @@ async def sec_ruby(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'asm')
 async def sec_asm(callback: CallbackQuery):
+    log_action(callback.from_user, "Security → Assembly tanladi")
     await callback.message.edit_text(
         "Assembly xavfsizlikda ekspluatatsiyalar yozish, shellcode yaratish va past darajadagi xakerlik amaliyotlarida qo‘llaniladi. "
         "Afzalligi — to‘liq nazorat va maksimal samaradorlik, kamchiligi esa murakkablik va platformaga bog‘liqligidir.",
@@ -273,6 +306,7 @@ async def sec_asm(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'bash')
 async def sec_bash(callback: CallbackQuery):
+    log_action(callback.from_user, "Security → Bash tanladi")
     await callback.message.edit_text(
         "Bash xavfsizlikda skriptlar, avtomatlashtirish va tizim boshqaruvida keng ishlatiladi. "
         "Pentest jarayonlarida tezkor buyruqlar va avtomatik hujum skriptlari yozish uchun qulay. "
@@ -282,6 +316,7 @@ async def sec_bash(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'ps')
 async def sec_powershell(callback: CallbackQuery):
+    log_action(callback.from_user, "Security → PowerShell tanladi")
     await callback.message.edit_text(
         "PowerShell xavfsizlikda asosan Windows tizimlarida ishlatiladi. "
         "U administrator buyruqlarini bajarish, ekspluatatsiyalar va avtomatlashtirishda qo‘llaniladi. "
@@ -293,11 +328,13 @@ async def sec_powershell(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'android')
 async def android(callback: CallbackQuery):
+    log_action(callback.from_user, "Android bo‘limini ochdi")
     await callback.message.edit_text("📱 Android uchun:", reply_markup=android_buttons)
 
 
 @dp.callback_query(F.data == 'android_java')
 async def android_java(callback: CallbackQuery):
+    log_action(callback.from_user, "Android → Java tanladi")
     await callback.message.edit_text(
         "Java Android dasturlashda eng asosiy tillardan biridir. "
         "U 1995-yilda Sun Microsystems tomonidan yaratilgan va Android SDK bilan to‘liq ishlaydi. "
@@ -307,6 +344,7 @@ async def android_java(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'android_kotlin')
 async def android_kotlin(callback: CallbackQuery):
+    log_action(callback.from_user, "Android → Kotlin tanladi")
     await callback.message.edit_text(
         "Kotlin 2011-yilda JetBrains tomonidan ishlab chiqilgan. "
         "U Android uchun rasmiy til sifatida tan olingan va Java bilan to‘liq mos keladi. "
@@ -316,6 +354,7 @@ async def android_kotlin(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'android_cpp')
 async def android_cpp(callback: CallbackQuery):
+    log_action(callback.from_user, "Android → C++ tanladi")
     await callback.message.edit_text(
         "C++ Android dasturlarida asosan NDK orqali qo‘llaniladi. "
         "U yuqori unumdorlik talab qilinadigan o‘yinlar va tizim dasturlarida ishlatiladi. "
@@ -325,6 +364,7 @@ async def android_cpp(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'android_dart')
 async def android_dart(callback: CallbackQuery):
+    log_action(callback.from_user, "Android → Dart tanladi")
     await callback.message.edit_text(
         "Dart dasturlash tili Google tomonidan ishlab chiqilgan bo‘lib, Flutter freymvorki orqali mashhur bo‘lgan. "
         "U bitta kod bazasi bilan Android va iOS uchun dastur yaratishga imkon beradi. "
@@ -334,6 +374,7 @@ async def android_dart(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'android_cs')
 async def android_cs(callback: CallbackQuery):
+    log_action(callback.from_user, "Android → C# tanladi")
     await callback.message.edit_text(
         "C# Android uchun Xamarin platformasi orqali qo‘llaniladi. "
         "U Microsoft ekotizimi bilan integratsiyalashgan va kross-platforma ilovalar yaratishga imkon beradi. "
@@ -343,6 +384,7 @@ async def android_cs(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'android_py')
 async def android_py(callback: CallbackQuery):
+    log_action(callback.from_user, "Android → Python tanladi")
     await callback.message.edit_text(
         "Python Android dasturlashda keng tarqalgan emas, ammo Kivy, BeeWare kabi freymvorklar orqali foydalanish mumkin. "
         "Afzalligi — soddalik va oson o‘rganish, kamchiligi esa rasmiy qo‘llab-quvvatlashning yo‘qligi va samaradorlik muammolaridir.",
@@ -353,10 +395,12 @@ async def android_py(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'ios')
 async def ios(callback: CallbackQuery):
+    log_action(callback.from_user, "iOS bo‘limini ochdi")
     await callback.message.edit_text("🍏 iOS uchun:", reply_markup=ios_buttons)
 
 @dp.callback_query(F.data == 'ios_swift')
 async def ios_swift(callback: CallbackQuery):
+    log_action(callback.from_user, "iOS → Swift tanladi")
     await callback.message.edit_text(
         "Swift dasturlash tili 2014-yilda Apple tomonidan yaratilgan bo‘lib, asosan iOS, macOS va boshqa Apple platformalari uchun mo‘ljallangan. "
         "U xavfsiz, tez va zamonaviy sintaksisga ega. "
@@ -367,6 +411,7 @@ async def ios_swift(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'ios_objc')
 async def ios_objc(callback: CallbackQuery):
+    log_action(callback.from_user, "iOS → Objective-C tanladi")
     await callback.message.edit_text(
         "Objective-C dasturlash tili Apple tomonidan iOS va macOS uchun uzoq vaqt davomida asosiy til bo‘lib kelgan. "
         "U C tiliga asoslangan va obyektga yo‘naltirilgan dasturlash imkoniyatlarini qo‘shadi. "
@@ -376,6 +421,7 @@ async def ios_objc(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'ios_cpp')
 async def ios_cpp(callback: CallbackQuery):
+    log_action(callback.from_user, "iOS → C++ tanladi")
     await callback.message.edit_text(
         "C++ iOS dasturlashda yuqori unumdorlikka ega komponentlar va o‘yinlar yaratishda qo‘llaniladi. "
         "U tezligi va samaradorligi tufayli grafik tizimlarda keng ishlatiladi. "
@@ -385,6 +431,7 @@ async def ios_cpp(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'ios_dart')
 async def ios_dart(callback: CallbackQuery):
+    log_action(callback.from_user, "iOS → Dart tanladi")
     await callback.message.edit_text(
         "Dart dasturlash tili Google tomonidan ishlab chiqilgan bo‘lib, Flutter freymvorki orqali mashhur bo‘lgan. "
         "U bitta kod bazasi bilan iOS va Android uchun dastur yaratishga imkon beradi. "
@@ -394,6 +441,7 @@ async def ios_dart(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'ios_cs')
 async def ios_cs(callback: CallbackQuery):
+    log_action(callback.from_user, "iOS → C# tanladi")
     await callback.message.edit_text(
         "C# iOS dasturlarini Xamarin platformasi orqali ishlab chiqishda qo‘llaniladi. "
         "U kross-platforma ilovalar yaratishga imkon beradi va .NET imkoniyatlaridan foydalanadi. "
@@ -403,6 +451,7 @@ async def ios_cs(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'ios_py')
 async def ios_py(callback: CallbackQuery):
+    log_action(callback.from_user, "iOS → Python tanladi")
     await callback.message.edit_text(
         "Python iOS dasturlash uchun rasmiy til emas, lekin Kivy, BeeWare kabi freymvorklar orqali qo‘llanilishi mumkin. "
         "Afzalligi — oson o‘rganish va soddalik, kamchiligi esa cheklangan qo‘llab-quvvatlash va samaradorlik muammolaridir.",
@@ -413,10 +462,12 @@ async def ios_py(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'game')
 async def game(callback: CallbackQuery):
+    log_action(callback.from_user, "O‘yin bo‘limini ochdi")
     await callback.message.edit_text("🎮 O‘yin yaratish uchun:", reply_markup=game_buttons)
 
 @dp.callback_query(F.data == 'game_cpp')
 async def game_cpp(callback: CallbackQuery):
+    log_action(callback.from_user, "Game → C++ tanladi")
     await callback.message.edit_text(
         "C++ Unreal Engine orqali o‘yin yaratishda eng ko‘p qo‘llaniladigan tillardan biridir. "
         "U yuqori tezlik, kuchli grafika imkoniyatlari va murakkab o‘yin mexanikalarini yaratishda ishlatiladi. "
@@ -426,6 +477,7 @@ async def game_cpp(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'game_cs')
 async def game_cs(callback: CallbackQuery):
+    log_action(callback.from_user, "Game → C# tanladi")
     await callback.message.edit_text(
         "C# Unity o‘yin dvigateli orqali keng qo‘llaniladi. "
         "U 2D va 3D o‘yinlar yaratishda juda qulay va oson o‘rganiladi. "
@@ -435,6 +487,7 @@ async def game_cs(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'game_rust')
 async def game_rust(callback: CallbackQuery):
+    log_action(callback.from_user, "Game → Rust tanladi")
     await callback.message.edit_text(
         "Rust yangi va xavfsiz til sifatida o‘yin dvigatellari va grafik tizimlarda qo‘llanila boshlagan. "
         "U tezligi va xotira xavfsizligi bilan ajralib turadi. "
@@ -444,6 +497,7 @@ async def game_rust(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'game_java')
 async def game_java(callback: CallbackQuery):
+    log_action(callback.from_user, "Game → Java tanladi")
     await callback.message.edit_text(
         "Java mobil o‘yinlar (Android) va ayrim desktop o‘yinlarda qo‘llaniladi. "
         "Minecraft kabi mashhur o‘yinlar ham Java’da yozilgan. "
@@ -453,6 +507,7 @@ async def game_java(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'game_lua')
 async def game_lua(callback: CallbackQuery):
+    log_action(callback.from_user, "Game → Lua tanladi")
     await callback.message.edit_text(
         "Lua ssenariy tili sifatida o‘yin dvigatellarida keng qo‘llaniladi. "
         "Roblox va World of Warcraft kabi o‘yinlarda scripting uchun ishlatiladi. "
@@ -462,6 +517,7 @@ async def game_lua(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'game_js')
 async def game_js(callback: CallbackQuery):
+    log_action(callback.from_user, "Game → JavaScript/TypeScript tanladi")
     await callback.message.edit_text(
         "JavaScript va TypeScript asosan brauzer o‘yinlari va WebGL asosidagi loyihalarda qo‘llaniladi. "
         "Phaser, Babylon.js, Three.js kabi kutubxonalar bilan ishlatiladi. "
@@ -471,6 +527,7 @@ async def game_js(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'own')
 async def own(callback: CallbackQuery):
+    log_action(callback.from_user, "Shaxsiy sahifalar bo‘limini ochdi")
     await callback.message.edit_text(
         "🌐 Mening sahifalarim:",
         reply_markup=own_buttons

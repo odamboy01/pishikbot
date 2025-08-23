@@ -3,10 +3,7 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 
 menu = InlineKeyboardMarkup(inline_keyboard= [
     [
-        InlineKeyboardButton(text="Tillar", callback_data="lang")
-    ],
-    [
-        InlineKeyboardButton(text="Ega", callback_data="own")
+        InlineKeyboardButton(text="Tillar", callback_data="lang"), InlineKeyboardButton(text="Ega", callback_data="own")
     ]
 ])
 
@@ -70,6 +67,9 @@ web_buttons = InlineKeyboardMarkup(inline_keyboard=[
         InlineKeyboardButton(text="Java", callback_data="web_java"),
         InlineKeyboardButton(text="C#", callback_data="web_cs"),
         InlineKeyboardButton(text="Kotlin", callback_data="web_kot")
+    ],
+    [
+        InlineKeyboardButton(text='Orqaga', callback_data="lang")
     ]
 ])
 
@@ -80,13 +80,17 @@ security_buttons = InlineKeyboardMarkup(inline_keyboard=[
         InlineKeyboardButton(text="C", callback_data="c"),
         InlineKeyboardButton(text="C++", callback_data="cpp"),
         InlineKeyboardButton(text="Go", callback_data="go"),
-        InlineKeyboardButton(text="Rust", callback_data="rust")],
+        InlineKeyboardButton(text="Rust", callback_data="rust")
+        ],
         [
         InlineKeyboardButton(text="Perl", callback_data="perl"),
         InlineKeyboardButton(text="Ruby", callback_data="ruby"),
         InlineKeyboardButton(text="Assembly", callback_data="asm"),
         InlineKeyboardButton(text="Bash", callback_data="bash"),
         InlineKeyboardButton(text="PowerShell", callback_data="ps")
+    ],
+    [
+        InlineKeyboardButton(text="Orqaga", callback_data="lang")
     ]
 ])
 
@@ -100,6 +104,9 @@ android_buttons = InlineKeyboardMarkup(inline_keyboard=[
         InlineKeyboardButton(text="Dart (Flutter)", callback_data="android_dart"),
         InlineKeyboardButton(text="C# (Xamarin)", callback_data="android_cs"),
         InlineKeyboardButton(text="Python", callback_data="android_py")
+    ],
+    [
+        InlineKeyboardButton(text="Orqaga", callback_data="lang")
     ]
 ])
 
@@ -114,6 +121,9 @@ ios_buttons = InlineKeyboardMarkup(inline_keyboard=[
         InlineKeyboardButton(text="Dart (Flutter)", callback_data="ios_dart"),
         InlineKeyboardButton(text="C# (Xamarin)", callback_data="ios_cs"),
         InlineKeyboardButton(text="Python", callback_data="ios_py")
+    ],
+    [
+        InlineKeyboardButton(text="Orqaga", callback_data="lang")
     ]
 ])
 
